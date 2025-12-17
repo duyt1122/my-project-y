@@ -1,0 +1,55 @@
+package vn.hoidanit.jobhunter.util.error;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+
+import vn.hoidanit.jobhunter.domain.RestResponse;
+
+@RestControllerAdvice
+public class GlobalException {
+	@ExceptionHandler(value = { UsernameNotFoundException.class, BadCredentialsException.class,
+			IdInvalidException.class })
+	public ResponseEntity<RestResponse<Object>> handleIdException(Exception exception) {
+		RestResponse<Object> res = new RestResponse<Object>();
+		res.setStatusCode(HttpStatus.BAD_REQUEST.value());
+		res.setMessage("Exception occurs....");
+		res.setError(exception.getMessage());
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+	}
+
+	@ExceptionHandler(value = MethodArgumentNotValidException.class)
+	public ResponseEntity<RestResponse<Object>> handleMethodArgumentNotValidException(
+			MethodArgumentNotValidException exception) {
+		BindingResult result = exception.getBindingResult();
+		// BindingResult là một object chứa toàn bộ lỗi validate của request errors chứa
+		// các lỗi
+		final List<FieldError> fieldErrors = result.getFieldErrors();
+		RestResponse<Object> res = new RestResponse<Object>();
+		res.setStatusCode(HttpStatus.BAD_REQUEST.value());
+		res.setError(exception.getBody().getDetail());
+		List<String> errors = fieldErrors.stream().map(f -> f.getDefaultMessage()).collect(Collectors.toList());
+		res.setMessage(errors.size() > 1 ? errors : errors.get(0));
+
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+	}
+
+	@ExceptionHandler(value = NoResourceFoundException.class)
+	public ResponseEntity<RestResponse<Object>> handlNoResourceFoundException(NoResourceFoundException ex) {
+		RestResponse<Object> res = new RestResponse<Object>();
+		res.setStatusCode(HttpStatus.NOT_FOUND.value());
+		res.setMessage("404 not found, URL may not exist...");
+		res.setError(ex.getMessage());
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(res);
+	}
+}
