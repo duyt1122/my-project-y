@@ -15,7 +15,7 @@ public class ResLoginDTO {
 
 	@Setter
 	@Getter
-	@NoArgsConstructor
+	
 	public static class UserLogin {
 		private long id;
 		private String email;
